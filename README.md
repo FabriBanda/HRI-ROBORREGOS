@@ -11,6 +11,14 @@ para el reto de **Human-Robot Interaction (HRI)** de Roborregos Candidates 2025.
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [API key de OpenAI](https://platform.openai.com/)
 
+## Librerias principales usadas
+
+- **openai** - para embeddings y generación de respuestas con LLM.  
+- **psycopg2-binary** - para conexión con Postgres + pgvector.  
+- **python-dotenv** - para cargar variables de entorno desde `.env`.  
+- **rank-bm25** - implementación de BM25 para recuperación léxica.  
+- **re** (estándar) - para tokenización básica.
+
 ---
 
 ## Cómo correrlo
@@ -102,7 +110,18 @@ Antes de buscar en la base vectorial, la pregunta del usuario se **reescribe aut
   4. La búsqueda en la DB vectorial se hace con `q_eff`.
   5. El LLM genera la respuesta usando el contexto recuperado.
 
+## 2. Hybrid Retrieval (Embeddings + BM25)
 
+Este sistema combina dos recuperadores:
+- **Embeddings (pgvector)**: entienden el significado de la consulta (paráfrasis, sinónimos).
+- **BM25 (léxico)**: se enfoca en coincidencias exactas (años, fechas, nombres).
+
+### ¿Por qué BM25 y no solo TF-IDF?
+TF-IDF solo cuenta ocurrencias de un término, sin fijarse en la longitud del documento ni en la saturación de palabras.  
+
+**BM25 soluciona esto penalizando documentos largos y aplicando rendimientos decrecientes a repeticiones**, lo que asegura que el sistema recupere fragmentos más concisos y relevantes.  
+
+Por eso use **Hybrid Retrieval junto a embeddings**, fusionando ambos rankings con **Reciprocal Rank Fusion (RRF)** para obtener la mejor respuesta combinando ambos add-ons para el reto.
 ## Autor
 
 Proyecto desarrollado por **Fabricio Banda Hernández**  
