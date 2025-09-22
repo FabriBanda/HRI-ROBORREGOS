@@ -21,6 +21,32 @@ if not API_KEY:
 
 client = OpenAI(api_key=API_KEY)
 
+# Query Rewriting
+def rewrite_query(raw_q: str, model: str = MODEL) -> str:
+    """Reescribe la pregunta para búsqueda semántica (breve y sin ruido)."""
+    prompt = (
+    "Reescribe la siguiente pregunta para búsqueda semántica.\n"
+    "- Mantén el mismo idioma.\n"
+    "- Quita muletillas y ambigüedad.\n"
+    "- Si la pregunta ya es clara y concisa, devuélvela igual sin cambios.\n"
+    f"\nPregunta: {raw_q}\nReescrita:"
+)
+    try:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "Eres un reescritor de consultas para RAG."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.0,
+        )
+        out = resp.choices[0].message.content.strip()
+        # fallback si el modelo devuelve algo vacío o muy corto sin sentido
+        return out if len(out) > 0 else raw_q
+    except Exception:
+        return raw_q  
+
+
 def embed(text: str) -> list[float]:
     return client.embeddings.create(input=[text], model=EMBED_MODEL).data[0].embedding
 
@@ -43,23 +69,22 @@ def retrieve(query: str, k: int = 3):
     return [{"chunk": r[0], "source": r[1], "idx": r[2], "sim": float(-r[3])} for r in rows]
 
 def answer(query: str, k: int = 3) -> str:
-    ctx = retrieve(query, k)
+    q_eff = rewrite_query(query)  # rewriting 
+    print(f"[Rewriting] '{query}' ->  '{q_eff}'") 
+
+    ctx = retrieve(q_eff, k)
     if not ctx:
-       
-        with closing(psycopg2.connect(DB_URL)) as conn, conn, closing(conn.cursor()) as cur:
-            cur.execute("SELECT chunk, source, chunk_idx FROM documents LIMIT %s", (k,))
-            rows = cur.fetchall()
-        if not rows:
-            return "No hay contexto suficiente"
-        ctx = [{"chunk": r[0], "source": r[1], "idx": r[2], "sim": 0.0} for r in rows]
+        return "No encontré contexto en la DB. ¿Ya corriste ingest_pg.py?"
 
     context = "\n\n".join([c["chunk"] for c in ctx])
     prompt = f"""Responde SOLO con el CONTEXTO. Si falta informacion, dilo.
 CONTEXTO:
 {context}
 
-PREGUNTA: {query}
+PREGUNTA (original): {query}
+PREGUNTA (reescrita): {q_eff}
 RESPUESTA:"""
+
     resp = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
@@ -74,4 +99,4 @@ if __name__ == "__main__":
         q = input("Pregunta: ").strip()
         if q.lower() == "quit":
             break
-        print("→", answer(q, k=3), "\n")
+        print(answer(q, k=3), "\n")

@@ -87,6 +87,22 @@ El hermano de Fabricio es Rigoberto Banda-Hernández.
 
 ---
 
+---
+
+## Add-ons implementados
+
+### 1. Query Rewriting
+Este paso adicional mejora la recuperación de contexto.  
+Antes de buscar en la base vectorial, la pregunta del usuario se **reescribe automáticamente** con un LLM (chat gpt 4o mini) para hacerla más clara y concisa.
+
+**Flujo:**
+  1. Usuario hace una pregunta - `query`.
+  2. El sistema la pasa por `rewrite_query()`.
+  3. Se obtiene una versión más limpia y concisa - `q_eff`.
+  4. La búsqueda en la DB vectorial se hace con `q_eff`.
+  5. El LLM genera la respuesta usando el contexto recuperado.
+
+
 ## Autor
 
 Proyecto desarrollado por **Fabricio Banda Hernández**  
