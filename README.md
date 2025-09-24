@@ -113,7 +113,7 @@ Antes de buscar en la base vectorial, la pregunta del usuario se **reescribe aut
 ## 2. Hybrid Retrieval (Embeddings + BM25)
 
 Este sistema combina dos recuperadores:
-- **Embeddings (pgvector)**: entienden el significado de la consulta (paráfrasis, sinónimos).
+- **Embeddings (pgvector)**: entienden el significado de la consulta (paráfrasis, sinonimos).
 - **BM25 (léxico)**: se enfoca en coincidencias exactas (años, fechas, nombres).
 
 ### ¿Por qué BM25 y no solo TF-IDF?
@@ -129,7 +129,7 @@ Este sistema implementa **caching** en dos niveles para reducir latencia y costo
 
 ### Caché de embeddings (`lru_cache`)
 Cada vez que se genera un embedding para una consulta (`q_eff`), se guarda en memoria con `lru_cache`.  
-Si la misma pregunta se repite, el vector se devuelve al instante sin llamar a OpenAI:
+Si la misma pregunta se repite el vector se devuelve al instante sin llamar a Chatgpt:
 
 ```
 python
