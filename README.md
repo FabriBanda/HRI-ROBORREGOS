@@ -124,5 +124,46 @@ TF-IDF solo cuenta ocurrencias de un término, sin fijarse en la longitud del do
 Por eso use **Hybrid Retrieval junto a embeddings**, fusionando ambos rankings con **Reciprocal Rank Fusion (RRF)** para obtener la mejor respuesta combinando ambos add-ons para el reto.
 ## Autor
 
+## 3. Text Caching 
+Este sistema implementa **caching** en dos niveles para reducir latencia y costo de tokens.
+
+### Caché de embeddings (`lru_cache`)
+Cada vez que se genera un embedding para una consulta (`q_eff`), se guarda en memoria con `lru_cache`.  
+Si la misma pregunta se repite, el vector se devuelve al instante sin llamar a OpenAI:
+
+```
+python
+from functools import lru_cache
+
+@lru_cache(maxsize=512)
+def _embed_cached(text: str) -> tuple:
+    return tuple(client.embeddings.create(input=[text], model=EMBED_MODEL).data[0].embedding)
+
+def embed(text: str) -> list[float]:
+    if ENABLE_CACHE:
+        return list(_embed_cached(text))
+    return client.embeddings.create(input=[text], model=EMBED_MODEL).data[0].embedding
+
+```
+
+### Caché de respuestas finales 
+El sistema guarda la respuesta final del LLM por clave (q_eff + k)
+Si la misma consulta se repite devuelve directamente la respuesta con el indicador [cache-hit] ( que define que esa pregunta fue hecha antes y por lo tanto no es necesario mandar llamar el LLM )
+
+```
+ANSWERS_CACHE: dict[str, str] = {}
+
+def answer(query: str, k: int = 3) -> str:
+    q_eff = rewrite_query(query) or query
+    key = f"k={k}|{q_eff.strip().lower()}"
+    if ENABLE_CACHE and key in ANSWERS_CACHE:
+        return ANSWERS_CACHE[key] + "\n\n[cache-hit]"
+    out = resp.choices[0].message.content
+    if ENABLE_CACHE:
+        ANSWERS_CACHE[key] = out
+    return out
+
+```
+
 Proyecto desarrollado por **Fabricio Banda Hernández**  
 Reto avanzados **HRI — Roborregos 2025**
