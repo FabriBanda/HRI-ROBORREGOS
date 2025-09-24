@@ -116,14 +116,63 @@ Este sistema combina dos recuperadores:
 - **Embeddings (pgvector)**: entienden el significado de la consulta (paráfrasis, sinonimos).
 - **BM25 (léxico)**: se enfoca en coincidencias exactas (años, fechas, nombres).
 
-### ¿Por qué BM25 y no solo TF-IDF?
-TF-IDF solo cuenta ocurrencias de un término, sin fijarse en la longitud del documento ni en la saturación de palabras.  
+## Recuperación semantica 
+Cada fragmento de la KB se convierte en un vector usando el modelo text-embedding-3-small de OpenAI.
+Estos vectores se guardan en Postgres con la extensión pgvecto y cada consulta, se genera un embedding de la pregunta y se buscan las partes más cercanas con distancia vectorial.
 
-**BM25 soluciona esto penalizando documentos largos y aplicando rendimientos decrecientes a repeticiones**, lo que asegura que el sistema recupere fragmentos más concisos y relevantes.  
+```
+def retrieve(query: str, k: int = 3):
+    qvec = embed(query)
+    qvec_sql = f"[{', '.join(map(str, qvec))}]"
+    sql = f"""
+        SELECT chunk, source, chunk_idx, (embedding <-> '{qvec_sql}'::vector) AS l2
+        FROM documents
+        ORDER BY embedding <-> '{qvec_sql}'::vector
+        LIMIT {int(k)}
+    """
+```
 
-Por eso use **Hybrid Retrieval junto a embeddings**, fusionando ambos rankings con **Reciprocal Rank Fusion (RRF)** para obtener la mejor respuesta combinando ambos add-ons para el reto.
-## Autor
+## Recuperación Lexica
+Se construye un índice BM25 con todos los chunks almacenados en Postgres.
+BM25 da prioridad a coincidencias exactas (años, nombres, números).
 
+```
+from rank_bm25 import BM25Okapi
+def build_bm25_from_db():
+    with psycopg2.connect(DB_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT chunk, source, chunk_idx FROM documents")
+            rows = cur.fetchall()
+    for chunk, source, idx in rows:
+        BM25_DOCS.append(chunk)
+        BM25_TOKENS.append(_tokenize(chunk))
+        BM25_META.append((source, idx))
+    BM25 = BM25Okapi(BM25_TOKENS)
+```
+
+## Fusion de Resultados
+
+- Se toman los resultados de ambos métodos (semántico y léxico).
+- Cada resultado se pondera según su posición en el ranking.
+- La fórmula usada es 1 / (k + rank), con k=60 y al final, se devuelven los fragmentos con mayor puntaje combinado
+  
+```
+def hybrid_retrieve(query: str, k: int = 4):
+    sem = retrieve(query, k=k)
+    lex = lexical_retrieve(query, k=k)
+
+    sem_rank = { (d["source"], d["idx"]): r for r, d in enumerate(sem, start=1) }
+    lex_rank = { (d["source"], d["idx"]): r for r, d in enumerate(lex, start=1) }
+
+    fused = []
+    for ky in set(sem_rank) | set(lex_rank):
+        rrf = 0.0
+        if ky in sem_rank: rrf += 1.0 / (60 + sem_rank[ky])
+        if ky in lex_rank: rrf += 1.0 / (60 + lex_rank[ky])
+        # ...
+    fused.sort(key=lambda x: x["rrf"], reverse=True)
+    return fused[:k]
+```
 ## 3. Text Caching 
 Este sistema implementa **caching** en dos niveles para reducir latencia y costo de tokens.
 
