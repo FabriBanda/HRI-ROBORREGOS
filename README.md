@@ -214,5 +214,16 @@ def answer(query: str, k: int = 3) -> str:
 
 ```
 
+## 4. Task Distinction 
+El sistema clasifica automaticamente cada pregunta en tres categorias:
+### Skill
+Preguntas asociadas a hora,fecha,mes,año,calculos y marcador de partidos
+### LLM
+Mensajes conversacionales simples que se contestan con el LLM
+### KB (RAG)
+Preguntas sobre las KB que de las cuales tiene conocimiento
+
+
+
 Proyecto desarrollado por **Fabricio Banda Hernández**  
 Reto avanzados **HRI — Roborregos 2025**
