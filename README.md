@@ -10,7 +10,8 @@ para el reto de **Human-Robot Interaction (HRI)** de Roborregos Candidates 2025.
 - [Python](https://www.python.org/downloads/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [API key de OpenAI](https://platform.openai.com/)
-
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- [ROS 2 Humble](https://docs.ros.org/en/humble/index.html)
 ## Librerias principales usadas
 
 - **openai** - para embeddings y generación de respuestas con LLM.  
