@@ -244,7 +244,15 @@ Se implementó un servicio llamado `/rag/ask` dentro de un nodo de ROS 2 que rec
 2. El nodo ejecuta el script `rag_pg.py`, que procesa la consulta mediante el pipeline RAG (query rewriting, hybrid retrieval, text caching)
 3. El resultado se devuelve al cliente como una respuesta en texto.
 
+## Correr el service
+```bash
+cd ros2_ws
+colcon build
+source install/setup.bash
+ros2 run hri_rag_ros rag_service
+```
 ### Ejemplo de Interacción
+
 ```bash
 ros2 run hri_rag rag_service
 ```
