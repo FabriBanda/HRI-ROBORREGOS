@@ -18,6 +18,10 @@ para el reto de **Human-Robot Interaction (HRI)** de Roborregos Candidates 2025.
 - **python-dotenv** - para cargar variables de entorno desde `.env`.  
 - **rank-bm25** - implementación de BM25 para recuperación léxica.  
 - **re** (estándar) - para tokenización básica.
+- **rclpy** — para la integración de ROS 2 y la comunicación entre nodos y servicios.  
+- **docker / docker-compose** — para levantar los contenedores del sistema, base de datos y ROS 2.  
+- **pgvector** — extensión de Postgres que permite almacenar y consultar embeddings vectoriales.  
+- **functools** *(estándar)* — para implementar el sistema de caché con `lru_cache`.
 
 ---
 
