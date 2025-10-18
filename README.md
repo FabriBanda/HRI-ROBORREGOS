@@ -223,6 +223,34 @@ Mensajes conversacionales simples que se contestan con el LLM
 ### KB (RAG)
 Preguntas sobre las KB que de las cuales tiene conocimiento
 
+## 5. Integración con ROS 2 
+
+El sistema se integra con **ROS 2** para permitir la comunicación entre el modelo RAG y un entorno de interacción humano–robot.  
+Se implementó un servicio llamado `/rag/ask` dentro de un nodo de ROS 2 que recibe preguntas del usuario y devuelve respuestas generadas por el modelo.
+
+### Estructura del nodo
+- **Nodo:** `rag_service`
+- **Servicio:** `/rag/ask`
+- **Interfaz:** `Ask.srv`
+- **Lenguaje:** Python (`rclpy`)
+
+### Flujo
+1. El usuario envía una pregunta al servicio `/rag/ask` desde un cliente ROS 2.  
+2. El nodo ejecuta el script `rag_pg.py`, que procesa la consulta mediante el pipeline RAG (query rewriting, hybrid retrieval, text caching)
+3. El resultado se devuelve al cliente como una respuesta en texto.
+
+### Ejemplo de Interacción
+```bash
+ros2 run hri_rag rag_service
+```
+cliente
+```
+ros2 service call /rag/ask hri_rag/srv/Ask "{question: '¿Quien es Fabricio?'}"
+```
+respuesta
+```
+Fabricio Banda Hernández, tiene 20 años, nació el 13 de julio del 2005 y es de Ciudad Victoria. Actualmente estudia Ingeniería en Robótica y Sistemas Digitales en el Tecnológico de Monterrey, cursando el quinto semestre.
+```
 
 
 Proyecto desarrollado por **Fabricio Banda Hernández**  
