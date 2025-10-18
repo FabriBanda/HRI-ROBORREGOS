@@ -16,7 +16,7 @@ INTENT_LLM   = "llm"
 
 # Palabras clave skills
 TIME_KEYS  = {"hora", "time"}
-DATE_KEYS  = {"fecha", "día", "dia", "date"}
+DATE_KEYS  = {"fecha", "que día", "que dia", "date","hoy"}
 CALC_REGEX = _re.compile(r"^\s*([0-9+\-*/().\s]+)\s*$")  
 MONTH_KEYS  = {"mes", "mes actual", "en que mes", "¿en qué mes", "que mes", "qué mes"}
 YEAR_KEYS   = {"año", "año actual", "en qué año", "en que año", "year"}
@@ -40,7 +40,7 @@ OPPONENT_ALIASES = {
 
 
 def _norm_text(s: str) -> str:
-    # minúsculas + sin acentos
+
     s = s.lower()
     s = unicodedata.normalize("NFKD", s)
     return "".join(c for c in s if not unicodedata.combining(c))
@@ -132,7 +132,7 @@ def skill_score(user_q: str) -> str:
     - Permite filtrar por etapa (final/semifinal)
     - Parametriza SIEMPRE el SQL (nada de % literales)
     """
-    opp_canon = _guess_opponent(user_q)   
+    opp_canon = _guess_opponent(user_q)
 
     # base: documentos que mencionen marcador/resultado
     where_clauses = ["(chunk ILIKE %s OR chunk ILIKE %s)"]
@@ -417,6 +417,12 @@ def clear_caches():
     print("[cache] Embeddings y respuestas limpiadas.")
 
 if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "--oneshot":
+        q = sys.stdin.read().strip()
+        print(answer_with_routing(q, k=4))
+        sys.exit(0)
+
     build_bm25_from_db()
     print("RAG (Hybrid + Task Distinction) listo. Escribe 'quit' para salir. Comandos: :clear\n")
     while True:

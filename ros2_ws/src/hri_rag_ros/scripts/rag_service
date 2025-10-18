@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Lanza el nodo como módulo Python
+exec python3 -m hri_rag_ros.rag_service "$@"
